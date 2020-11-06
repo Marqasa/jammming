@@ -12,9 +12,15 @@ const track1 = {
 };
 const track2 = {
   id: 2,
-  name: "Orisor",
+  name: "Orison",
   artist: "Soen",
   album: "Lykaia",
+};
+const track3 = {
+  id: 3,
+  name: "The Nod",
+  artist: "Fat Freddy's Drop",
+  album: "Dr. Boondigga & The Big BW",
 };
 const searchResults = [track1, track2];
 const playlistName = "Rock and Roll";
@@ -28,7 +34,27 @@ class App extends React.Component {
       playlistName: playlistName,
       playlistTracks: playlistTracks,
     };
+    this.addTrack = this.addTrack.bind(this);
   }
+
+  // Add a new track to the playlist
+  addTrack(track) {
+    // Get a copy of the current playlist
+    const playlistTracks = this.state.playlistTracks;
+
+    // Check if the current playlist already contains the new track
+    if (playlistTracks.find((savedTrack) => savedTrack.id === track.id)) {
+      return;
+    }
+
+    // If not, add the new track to the playlist
+    playlistTracks.push(track);
+    this.setState({
+      playlistTracks: playlistTracks,
+    });
+  }
+
+  componentDidMount() {}
 
   render() {
     return (
@@ -39,7 +65,10 @@ class App extends React.Component {
         <div className="App">
           <SearchBar />
           <div className="App-playlist">
-            <SearchResults searchResults={this.state.searchResults} />
+            <SearchResults
+              searchResults={this.state.searchResults}
+              onAdd={this.addTrack}
+            />
             <Playlist
               playlistName={this.state.playlistName}
               playlistTracks={this.state.playlistTracks}
