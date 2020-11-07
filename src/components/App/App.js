@@ -22,7 +22,7 @@ const track3 = {
   artist: "Fat Freddy's Drop",
   album: "Dr. Boondigga & The Big BW",
 };
-const searchResults = [track1, track2];
+const searchResults = [track1, track2, track3];
 const playlistName = "Rock and Roll";
 const playlistTracks = [track1, track2];
 
@@ -35,6 +35,7 @@ class App extends React.Component {
       playlistTracks: playlistTracks,
     };
     this.addTrack = this.addTrack.bind(this);
+    this.removeTrack = this.removeTrack.bind(this);
   }
 
   // Add a new track to the playlist
@@ -49,6 +50,19 @@ class App extends React.Component {
 
     // If not, add the new track to the playlist
     playlistTracks.push(track);
+    this.setState({
+      playlistTracks: playlistTracks,
+    });
+  }
+
+  // Remove a track from the playlist
+  removeTrack(track) {
+    // Create a new playlist that doesn't contain the track to remove
+    const playlistTracks = this.state.playlistTracks.filter(
+      (savedTrack) => savedTrack.id !== track.id
+    );
+
+    // Update the state playlist
     this.setState({
       playlistTracks: playlistTracks,
     });
@@ -72,6 +86,7 @@ class App extends React.Component {
             <Playlist
               playlistName={this.state.playlistName}
               playlistTracks={this.state.playlistTracks}
+              onRemove={this.removeTrack}
             />
           </div>
         </div>
