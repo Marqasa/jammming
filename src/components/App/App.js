@@ -6,18 +6,21 @@ import "./App.css";
 
 const track1 = {
   id: 1,
+  uri: "sdoif",
   name: "Roady",
   artist: "Fat Freddy's Drop",
   album: "Based On A True Story",
 };
 const track2 = {
   id: 2,
+  uri: "askdjhfk",
   name: "Orison",
   artist: "Soen",
   album: "Lykaia",
 };
 const track3 = {
   id: 3,
+  uri: "lskdjhf",
   name: "The Nod",
   artist: "Fat Freddy's Drop",
   album: "Dr. Boondigga & The Big BW",
@@ -37,13 +40,7 @@ class App extends React.Component {
     this.addTrack = this.addTrack.bind(this);
     this.removeTrack = this.removeTrack.bind(this);
     this.updatePlaylistName = this.updatePlaylistName.bind(this);
-  }
-
-  // Update the playlist's name
-  updatePlaylistName(name) {
-    this.setState({
-      playlistName: name,
-    });
+    this.savePlaylist = this.savePlaylist.bind(this);
   }
 
   // Add a new track to the playlist
@@ -76,6 +73,22 @@ class App extends React.Component {
     });
   }
 
+  // Update the playlist's name
+  updatePlaylistName(name) {
+    this.setState({
+      playlistName: name,
+    });
+  }
+
+  // Save the playlist
+  savePlaylist() {
+    // Generate an array of track URIs from the current playlist
+    let trackURIs = [];
+    this.state.playlistTracks.forEach((track) => {
+      trackURIs.push(track.uri);
+    });
+  }
+
   render() {
     return (
       <div>
@@ -94,6 +107,7 @@ class App extends React.Component {
               playlistTracks={this.state.playlistTracks}
               onRemove={this.removeTrack}
               onNameChange={this.updatePlaylistName}
+              onSave={this.savePlaylist}
             />
           </div>
         </div>
