@@ -5,38 +5,13 @@ import Playlist from "../Playlist/Playlist";
 import Spotify from "../../util/Spotify";
 import "./App.css";
 
-const track1 = {
-  id: 1,
-  uri: "sdoif",
-  name: "Roady",
-  artist: "Fat Freddy's Drop",
-  album: "Based On A True Story",
-};
-const track2 = {
-  id: 2,
-  uri: "askdjhfk",
-  name: "Orison",
-  artist: "Soen",
-  album: "Lykaia",
-};
-const track3 = {
-  id: 3,
-  uri: "lskdjhf",
-  name: "The Nod",
-  artist: "Fat Freddy's Drop",
-  album: "Dr. Boondigga & The Big BW",
-};
-const searchResults = [track1, track2, track3];
-const playlistName = "Rock and Roll";
-const playlistTracks = [track1, track2];
-
 class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
       searchResults: [],
-      playlistName: playlistName,
-      playlistTracks: playlistTracks,
+      playlistName: "New Playlist",
+      playlistTracks: [],
     };
     this.search = this.search.bind(this);
     this.addTrack = this.addTrack.bind(this);
@@ -45,10 +20,23 @@ class App extends React.Component {
     this.savePlaylist = this.savePlaylist.bind(this);
   }
 
+  // Search for tracks on Spotify with the requested term
   search(term) {
-    Spotify.search(term).then((tracks) => {
+    Spotify.search(term).then((searchResults) => {
+      this.setState({ searchResults: searchResults });
+    });
+  }
+
+  // Save the playlist to the user's Spotify account
+  savePlaylist() {
+    // Create an array of track URIs from the current playlist
+    const trackUris = this.state.playlistTracks.map((track) => track.uri);
+
+    // Once the playlist has saved, reset playlistName and playlistTracks
+    Spotify.savePlaylist(this.state.playlistName, trackUris).then(() => {
       this.setState({
-        searchResults: tracks,
+        playlistName: "New Playlist",
+        playlistTracks: [],
       });
     });
   }
@@ -88,19 +76,6 @@ class App extends React.Component {
     this.setState({
       playlistName: name,
     });
-  }
-
-  // Save the playlist
-  savePlaylist() {
-    // Generate an array of track URIs from the current playlist
-    let trackURIs = [];
-    this.state.playlistTracks.forEach((track) => {
-      trackURIs.push(track.uri);
-    });
-  }
-
-  componentDidMount() {
-    // Spotify.getAccessToken();
   }
 
   render() {

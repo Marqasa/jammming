@@ -1,73 +1,137 @@
-const CLIENT_ID = "a86a7569f68e4686a8f7fae4c8f21e26";
-const REDIRECT_URI = "http://localhost:3000/";
-let accessToken;
-let expiresIn;
+import * as Constants from "./Constants";
+let accessToken = "";
 
 const Spotify = {
   // Get a user's access token
   getAccessToken() {
-    // If accessToken already exists, return
-    if (accessToken) return;
+    // If the access token already exists, return it
+    if (accessToken) {
+      return accessToken;
+    }
 
-    // Check if the url response contains the access token
-    if (window.location.href.includes("access_token")) {
-      // Get the hash response from the url
-      const hash = window.location.hash.substring(1);
+    // Check the window url for an access token and expires in match
+    console.log(window.location.href);
+    const accessTokenMatch = window.location.href.match(/access_token=([^&]*)/);
+    const expiresInMatch = window.location.href.match(/expires_in=([^&]*)/);
 
-      // Parse the response into an object
-      const response = hash.split("&").reduce((result, item) => {
-        let parts = item.split("=");
-        result[parts[0]] = parts[1];
-        return result;
-      }, {});
+    console.log(accessTokenMatch + " " + expiresInMatch);
 
-      // Set access token and expiry date
-      accessToken = response.access_token;
-      expiresIn = response.expiresIn;
+    if (accessTokenMatch && expiresInMatch) {
+      accessToken = accessTokenMatch[1];
+      const expiresIn = Number(expiresInMatch[1]);
 
       // Set the expiry time for the access token
       window.setTimeout(() => (accessToken = ""), expiresIn * 1000);
       window.history.pushState("Access Token", null, "/");
+
+      console.log("After fetch " + accessToken);
+      return accessToken;
     } else {
       // Direct the user to the authorization page
-      window.location = `https://accounts.spotify.com/authorize?client_id=${CLIENT_ID}&response_type=token&scope=playlist-modify-public&redirect_uri=${REDIRECT_URI}`;
+      window.location = `https://accounts.spotify.com/authorize?client_id=${Constants.clientId}&redirect_uri=${Constants.redirectUri}&scope=${Constants.scope}&response_type=token`;
     }
   },
 
-  // Search Spotify for the requested term
+  // Search for tracks on Spotify with the requested term
   async search(term) {
-    // Make sure accessToken is set
-    if (!accessToken) {
-      this.getAccessToken();
+    const accessToken = Spotify.getAccessToken();
+    const url = `${Constants.baseUri}/v1/search?type=track&q=${term}`;
+    const options = {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    };
+
+    // Query the Spotify API and await a response
+    try {
+      const response = await fetch(url, options);
+
+      // Check the response is ok
+      if (response.ok) {
+        // Convert the response to JSON
+        const jsonResponse = await response.json();
+
+        // Check the JSNO response contains a tracks object
+        if (jsonResponse.tracks) {
+          // Return an array of track objects
+          return jsonResponse.tracks.items.map((track) => ({
+            id: track.id,
+            name: track.name,
+            artist: track.artists[0].name,
+            album: track.album.name,
+            uri: track.uri,
+          }));
+        }
+      }
+    } catch (error) {
+      console.log(console.error);
+    }
+    // If no tracks were found or an error occured, return an empty array
+    return [];
+  },
+
+  // Save the playlist to the user's Spotify account
+  async savePlaylist(name, trackUris) {
+    // Check both arguments contain values
+    if (!name || !trackUris.length) {
+      return;
     }
 
-    // Await the API response
-    const response = await fetch(
-      `https://api.spotify.com/v1/search?type=track&q=${term}`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
+    const accessToken = Spotify.getAccessToken();
+    const url = `${Constants.baseUri}/v1/me`;
+    const headers = {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    };
 
-    // Convert the response to JSON
-    const jsonResponse = await response.json();
+    try {
+      const response = await fetch(url, headers);
 
-    // Check the response contains a tracks object
-    if (jsonResponse.tracks) {
-      // Parse the items in the tracks object
-      return jsonResponse.tracks.items.map((track) => {
-        return {
-          id: track.id,
-          name: track.name,
-          artist: track.artists[0].name,
-          album: track.album.name,
-          uri: track.uri,
+      if (response.ok) {
+        const jsonResponse = await response.json();
+        const userId = jsonResponse.id;
+        const url = `${Constants.baseUri}/v1/users/${userId}/playlists`;
+
+        // Set POST options for our query
+        const options = {
+          method: "POST",
+          headers: {
+            "Content-type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ name: name }),
         };
-      });
-    } else {
-      return [];
+
+        try {
+          const response = await fetch(url, options);
+
+          if (response.ok) {
+            const jsonResponse = await response.json();
+            const playlistId = jsonResponse.id;
+            const url = `${Constants.baseUri}/v1/users/${userId}/playlists/${playlistId}/tracks`;
+            const options = {
+              method: "POST",
+              headers: {
+                "Content-type": "application/json",
+                Authorization: `Bearer ${accessToken}`,
+              },
+              body: JSON.stringify({ uris: trackUris }),
+            };
+
+            try {
+              const response = await fetch(url, options);
+              return response;
+            } catch (error) {
+              console.log(error);
+            }
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    } catch (error) {
+      console.log(error);
     }
   },
 };
